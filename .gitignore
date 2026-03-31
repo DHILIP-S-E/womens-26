@@ -25,3 +25,4 @@ terraform/.build/
 # Lambda build output
 lambda/dist/
 lambda/node_modules/
+docs/generate_ppt.py

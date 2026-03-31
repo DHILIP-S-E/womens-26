@@ -25,7 +25,9 @@
       "Bash(MOOD_ID=\"cmndgyt7f0003bcdg5hi4gpsl\")",
       "Bash(__NEW_LINE_c9030eab8e105bab__ echo:*)",
       "Read(//c/github/womens-safty/frontend/src/screens/**)",
-      "Bash(grep -E \"^d|package.json|\\\\.js$|\\\\.json$\")"
+      "Bash(grep -E \"^d|package.json|\\\\.js$|\\\\.json$\")",
+      "Bash(xargs head:*)",
+      "Bash(wc -l /c/github/womens-safty/frontend/src/screens/*.tsx /c/github/womens-safty/src/controllers/*.ts /c/github/womens-safty/src/services/*.ts)"
     ]
   }
 }
