@@ -24,7 +24,8 @@
       "Bash(SYMPTOM_ID=\"cmndgyt070002bcdg8h9zzbsu\")",
       "Bash(MOOD_ID=\"cmndgyt7f0003bcdg5hi4gpsl\")",
       "Bash(__NEW_LINE_c9030eab8e105bab__ echo:*)",
-      "Read(//c/github/womens-safty/frontend/src/screens/**)"
+      "Read(//c/github/womens-safty/frontend/src/screens/**)",
+      "Bash(grep -E \"^d|package.json|\\\\.js$|\\\\.json$\")"
     ]
   }
 }
