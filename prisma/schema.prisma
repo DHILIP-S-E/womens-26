@@ -1,0 +1,719 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// User Model
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique @db.VarChar(255)
+  username  String   @unique @db.VarChar(255)
+  passwordHash String @db.Text
+  firstName String   @db.VarChar(255)
+  lastName  String   @db.VarChar(255)
+  dateOfBirth DateTime
+  phoneNumber String?  @db.VarChar(20)
+  timezone  String   @default("UTC") @db.VarChar(50)
+  
+  // Preferences stored as JSON
+  preferences Json @default("{\"darkMode\": false, \"notificationsEnabled\": true, \"healthLakeExportEnabled\": false}")
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  country     String   @default("IN") @db.VarChar(5)
+  language    String   @default("en") @db.VarChar(10)
+
+  // Relations
+  cycles      Cycle[]
+  symptoms    Symptom[]
+  moods       Mood[]
+  reminders   Reminder[]
+  chatHistory ChatHistory[]
+  trustedContacts TrustedContact[]
+  sosAlerts       SOSAlert[]
+  safeWalkSessions SafeWalkSession[]
+  fertilityLogs   FertilityLog[]
+  ivfCycles       IVFCycle[]
+  pregnancyLogs   PregnancyLog[]
+  birthPlans      BirthPlan[]
+  contractionLogs ContractionLog[]
+  kickLogs        KickLog[]
+  epdsAssessments EPDSAssessment[]
+  feedingLogs     FeedingLog[]
+  babySleepLogs   BabySleepLog[]
+  hotFlashLogs    HotFlashLog[]
+  griefJournals   GriefJournal[]
+  favouriteTherapists UserFavouriteTherapist[]
+  financialGoals  FinancialGoal[]
+  careerMilestones CareerMilestone[]
+  burnoutAssessments BurnoutAssessment[]
+  mentorProfile   MentorProfile?
+  expertProfile   ExpertProfile?
+  questions       Question[]
+  answers         Answer[]
+  upvotes         UpVote[]
+
+  @@index([email])
+  @@index([username])
+}
+
+// Cycle Model
+model Cycle {
+  id            String   @id @default(cuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  startDate     DateTime
+  endDate       DateTime?
+  cycleLength   Int
+  periodLength  Int
+  notes         String   @default("") @db.Text
+  
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  // Relations
+  symptoms      Symptom[]
+  
+  @@index([userId])
+  @@index([startDate])
+  @@index([endDate])
+}
+
+// Symptom Model
+model Symptom {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  cycleId   String?
+  cycle     Cycle?   @relation(fields: [cycleId], references: [id], onDelete: SetNull)
+  date      DateTime
+  type      String   @db.VarChar(100)
+  severity  Int      // 1-10 scale
+  notes     String   @default("") @db.Text
+  medicalInsights Json?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([date])
+  @@index([cycleId])
+}
+
+// Mood Model
+model Mood {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date      DateTime
+  mood      String   @db.VarChar(100)
+  intensity Int      // 1-10 scale
+  triggers  String[] @default([]) // Array of mood triggers
+  notes     String   @default("") @db.Text
+  medicalInsights Json?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([date])
+}
+
+// Reminder Model
+model Reminder {
+  id                  String   @id @default(cuid())
+  userId              String
+  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type                String   @db.VarChar(100) // "period_alert", "medication", "custom"
+  title               String   @db.VarChar(255)
+  description         String   @db.Text
+  scheduledTime       DateTime
+  frequency           String   @db.VarChar(50) // "once", "daily", "weekly", "monthly"
+  isActive            Boolean  @default(true)
+  notificationMethod  String   @db.VarChar(50) // "sms", "email", "push"
+  eventBridgeRuleArn  String?  @db.Text
+
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+  
+  @@index([userId])
+  @@index([scheduledTime])
+  @@index([isActive])
+}
+
+// ChatHistory Model
+model ChatHistory {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  message   String   @db.Text
+  response  String   @db.Text
+  
+  // Context stored as JSON
+  context   Json     @default("{\"recentMoods\": [], \"recentSymptoms\": [], \"currentCycle\": null}")
+  
+  createdAt DateTime @default(now())
+  
+  @@index([userId])
+  @@index([createdAt])
+}
+
+// ============================================================
+// DOMAIN 1: Safety & Emergency
+// ============================================================
+
+model TrustedContact {
+  id          String  @id @default(cuid())
+  userId      String
+  user        User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name        String  @db.VarChar(255)
+  phoneNumber String  @db.VarChar(20)
+  email       String? @db.VarChar(255)
+  relationship String @db.VarChar(100) // friend, family, partner, other
+  isPrimary   Boolean @default(false)
+  createdAt   DateTime @default(now())
+
+  @@index([userId])
+}
+
+model SOSAlert {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  latitude    Float
+  longitude   Float
+  audioUrl    String?  @db.Text // S3 URL for audio evidence
+  status      String   @default("sent") @db.VarChar(50) // sent, resolved, false_alarm
+  contactsNotified Int @default(0)
+  createdAt   DateTime @default(now())
+
+  @@index([userId])
+  @@index([createdAt])
+}
+
+model SafeWalkSession {
+  id              String    @id @default(cuid())
+  userId          String
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  startLatitude   Float
+  startLongitude  Float
+  destLatitude    Float
+  destLongitude   Float
+  expectedArrival DateTime
+  status          String    @default("active") @db.VarChar(50) // active, completed, sos_triggered
+  shareToken      String    @unique @db.VarChar(100) // public link token
+  lastLatitude    Float?
+  lastLongitude   Float?
+  lastUpdatedAt   DateTime?
+  completedAt     DateTime?
+  createdAt       DateTime  @default(now())
+
+  @@index([userId])
+  @@index([shareToken])
+  @@index([status])
+}
+
+model IncidentReport {
+  id          String   @id @default(cuid())
+  // No userId — fully anonymous
+  latitude    Float
+  longitude   Float
+  type        String   @db.VarChar(100) // catcalling, following, assault, groping, other
+  severity    Int      // 1-5 scale
+  description String   @default("") @db.Text
+  createdAt   DateTime @default(now())
+
+  @@index([latitude, longitude])
+  @@index([createdAt])
+}
+
+// ============================================================
+// DOMAIN 2: Full Health Lifecycle
+// ============================================================
+
+// Fertility & IVF
+model FertilityLog {
+  id            String   @id @default(cuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date          DateTime
+  bbt           Float?   // Basal body temperature (35.0-42.0°C)
+  ovulationTest String?  @db.VarChar(50) // positive, negative, not_tested
+  cervicalMucus String?  @db.VarChar(50) // dry, sticky, creamy, watery, eggwhite
+  intercourse   Boolean  @default(false)
+  notes         String   @default("") @db.Text
+  createdAt     DateTime @default(now())
+
+  @@index([userId])
+  @@index([date])
+}
+
+model IVFCycle {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  cycleNumber Int
+  stage       String   @db.VarChar(50) // stimulation, retrieval, fertilisation, transfer, wait, result
+  startDate   DateTime
+  endDate     DateTime?
+  medications Json?    // Array of { name, dosage, frequency }
+  notes       String   @default("") @db.Text
+  outcome     String?  @db.VarChar(50) // positive, negative, chemical, miscarriage, pending
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([userId])
+  @@index([stage])
+}
+
+// Pregnancy
+model PregnancyLog {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  week      Int      // 1-42
+  weight    Float?   // kg
+  bloodPressure String? @db.VarChar(20) // e.g. "120/80"
+  symptoms  String[] @default([])
+  notes     String   @default("") @db.Text
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([week])
+}
+
+model BirthPlan {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  preferences Json     // { birthLocation, painRelief, companions, feeding, etc. }
+  pdfUrl      String?  @db.Text // S3 URL
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([userId])
+}
+
+model ContractionLog {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  startTime DateTime
+  endTime   DateTime
+  intensity Int      // 1-10
+  notes     String   @default("") @db.Text
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([startTime])
+}
+
+model KickLog {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  week      Int      // pregnancy week
+  count     Int
+  duration  Int      // minutes
+  startTime DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([startTime])
+}
+
+// Postpartum
+model EPDSAssessment {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  answers   Json     // Array of 10 answers (0-3 each)
+  totalScore Int
+  flagged   Boolean  @default(false) // true if score >= 10
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([createdAt])
+}
+
+model FeedingLog {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  startTime DateTime
+  endTime   DateTime?
+  type      String   @db.VarChar(50) // breast_left, breast_right, bottle, formula
+  duration  Int?     // minutes
+  latchRating Int?   // 1-5
+  notes     String   @default("") @db.Text
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([startTime])
+}
+
+model BabySleepLog {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  startTime DateTime
+  endTime   DateTime?
+  quality   Int?     // 1-5
+  notes     String   @default("") @db.Text
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([startTime])
+}
+
+// Menopause
+model HotFlashLog {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date      DateTime
+  duration  Int      // seconds
+  severity  Int      // 1-10
+  trigger   String?  @db.VarChar(100) // stress, food, alcohol, exercise, unknown
+  notes     String   @default("") @db.Text
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([date])
+}
+
+// Grief & Loss
+model GriefJournal {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date      DateTime
+  stage     String?  @db.VarChar(50) // denial, anger, bargaining, depression, acceptance
+  content   String   @db.Text
+  isPrivate Boolean  @default(true) // ALWAYS true — never in exports
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([date])
+}
+
+// ============================================================
+// DOMAIN 3: Mental Health
+// ============================================================
+
+model CrisisKeyword {
+  id      String @id @default(cuid())
+  keyword String @unique @db.VarChar(255)
+  severity Int   @default(1) // 1-3 (1=monitor, 2=resources, 3=immediate)
+}
+
+model TherapistProfile {
+  id          String   @id @default(cuid())
+  name        String   @db.VarChar(255)
+  speciality  String   @db.VarChar(255) // gynaecologist, therapist, menopause_specialist
+  country     String   @db.VarChar(5)
+  languages   String[] @default([])
+  isOnline    Boolean  @default(false)
+  isInPerson  Boolean  @default(true)
+  costRange   String?  @db.VarChar(100) // "50-100 USD", "free", etc.
+  bookingUrl  String?  @db.Text
+  phone       String?  @db.VarChar(20)
+  address     String?  @db.Text
+  isVerified  Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  favouritedBy UserFavouriteTherapist[]
+
+  @@index([country])
+  @@index([speciality])
+}
+
+model UserFavouriteTherapist {
+  id           String @id @default(cuid())
+  userId       String
+  user         User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  therapistId  String
+  therapist    TherapistProfile @relation(fields: [therapistId], references: [id], onDelete: Cascade)
+  createdAt    DateTime @default(now())
+
+  @@unique([userId, therapistId])
+  @@index([userId])
+}
+
+model ResourcePathway {
+  id          String @id @default(cuid())
+  country     String @db.VarChar(5)
+  type        String @db.VarChar(100) // shelter, hotline, legal_aid, crisis_line
+  name        String @db.VarChar(255)
+  phone       String? @db.VarChar(20)
+  url         String? @db.Text
+  address     String? @db.Text
+  description String @default("") @db.Text
+  isActive    Boolean @default(true)
+  createdAt   DateTime @default(now())
+
+  @@index([country])
+  @@index([type])
+}
+
+// ============================================================
+// DOMAIN 4: Legal Rights & Financial Independence
+// ============================================================
+
+model LegalContent {
+  id       String @id @default(cuid())
+  country  String @db.VarChar(5)
+  category String @db.VarChar(100) // workplace_harassment, maternity_leave, divorce, domestic_violence
+  title    String @db.VarChar(500)
+  content  String @db.Text
+  language String @default("en") @db.VarChar(10)
+  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now())
+
+  @@index([country])
+  @@index([category])
+  @@index([language])
+}
+
+model DivorceRule {
+  id       String @id @default(cuid())
+  country  String @db.VarChar(5)
+  ruleType String @db.VarChar(100) // asset_split, child_support, alimony
+  formula  Json   // { type: "percentage", value: 50 } or { type: "table", ... }
+  description String @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([country])
+  @@index([ruleType])
+}
+
+model FinancialGoal {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title       String   @db.VarChar(255)
+  targetAmount Float
+  currentAmount Float  @default(0)
+  currency    String   @default("INR") @db.VarChar(10)
+  deadline    DateTime?
+  status      String   @default("active") @db.VarChar(50) // active, completed, paused
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([userId])
+  @@index([status])
+}
+
+// ============================================================
+// DOMAIN 5: Career & Life Stages
+// ============================================================
+
+model SalaryBenchmark {
+  id          String @id @default(cuid())
+  country     String @db.VarChar(5)
+  role        String @db.VarChar(255)
+  experienceLevel String @db.VarChar(50) // junior, mid, senior, lead
+  minSalary   Float
+  maxSalary   Float
+  currency    String @default("INR") @db.VarChar(10)
+  source      String? @db.VarChar(255)
+  updatedAt   DateTime @updatedAt
+  createdAt   DateTime @default(now())
+
+  @@index([country])
+  @@index([role])
+}
+
+model CareerMilestone {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      String   @db.VarChar(100) // promotion, pay_rise, new_job, certification, award
+  title     String   @db.VarChar(255)
+  company   String?  @db.VarChar(255)
+  salary    Float?
+  date      DateTime
+  notes     String   @default("") @db.Text
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([date])
+}
+
+model ContentBlock {
+  id        String @id @default(cuid())
+  key       String @unique @db.VarChar(255) // e.g. "hrt_guide", "pregnancy_week_12", "crisis_IN"
+  country   String? @db.VarChar(5)
+  category  String @db.VarChar(100)
+  title     String @db.VarChar(500)
+  content   String @db.Text
+  language  String @default("en") @db.VarChar(10)
+  metadata  Json?
+  isActive  Boolean @default(true)
+  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now())
+
+  @@index([key])
+  @@index([category])
+  @@index([country])
+}
+
+model BurnoutAssessment {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  answers     Json     // Array of answers
+  totalScore  Int
+  exhaustion  Int      // subscale
+  cynicism    Int      // subscale
+  efficacy    Int      // subscale
+  flagged     Boolean  @default(false) // true if above threshold
+  createdAt   DateTime @default(now())
+
+  @@index([userId])
+  @@index([createdAt])
+}
+
+// ============================================================
+// DOMAIN 6: Community & Mentorship
+// ============================================================
+
+model ExperienceTag {
+  id   String @id @default(cuid())
+  name String @unique @db.VarChar(255) // "survived_ivf", "left_abuse", "navigated_divorce"
+
+  mentors MentorProfileTag[]
+}
+
+model MentorProfile {
+  id          String   @id @default(cuid())
+  userId      String   @unique
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bio         String   @default("") @db.Text
+  isAnonymous Boolean  @default(false)
+  isActive    Boolean  @default(true)
+  tags        MentorProfileTag[]
+  mentorMatches MentorMatch[] @relation("MentorRelation")
+  menteeMatches MentorMatch[] @relation("MenteeRelation")
+  createdAt   DateTime @default(now())
+
+  @@index([isActive])
+}
+
+model MentorProfileTag {
+  id        String @id @default(cuid())
+  mentorId  String
+  mentor    MentorProfile  @relation(fields: [mentorId], references: [id], onDelete: Cascade)
+  tagId     String
+  tag       ExperienceTag  @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@unique([mentorId, tagId])
+}
+
+model MentorMatch {
+  id        String   @id @default(cuid())
+  mentorId  String
+  mentor    MentorProfile @relation("MentorRelation", fields: [mentorId], references: [id], onDelete: Cascade)
+  menteeId  String
+  mentee    MentorProfile @relation("MenteeRelation", fields: [menteeId], references: [id], onDelete: Cascade)
+  status    String   @default("pending") @db.VarChar(50) // pending, accepted, declined
+  createdAt DateTime @default(now())
+
+  @@index([mentorId])
+  @@index([menteeId])
+}
+
+model MentorMessage {
+  id         String   @id @default(cuid())
+  matchId    String
+  senderId   String
+  content    String   @db.Text
+  createdAt  DateTime @default(now())
+
+  @@index([matchId])
+  @@index([createdAt])
+}
+
+model ExpertProfile {
+  id           String   @id @default(cuid())
+  userId       String   @unique
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title        String   @db.VarChar(255) // "Dr.", "Advocate"
+  speciality   String   @db.VarChar(255)
+  credentials  String   @db.Text
+  isVerified   Boolean  @default(false) // Admin-verified only
+  createdAt    DateTime @default(now())
+}
+
+model Question {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String   @db.VarChar(500)
+  body      String   @db.Text
+  category  String   @db.VarChar(100) // health, legal, career, safety
+  isResolved Boolean @default(false)
+  answers   Answer[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([category])
+  @@index([createdAt])
+}
+
+model Answer {
+  id         String   @id @default(cuid())
+  questionId String
+  question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  body       String   @db.Text
+  isExpert   Boolean  @default(false)
+  upvotes    UpVote[]
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([questionId])
+  @@index([userId])
+}
+
+model UpVote {
+  id       String @id @default(cuid())
+  answerId String
+  answer   Answer @relation(fields: [answerId], references: [id], onDelete: Cascade)
+  userId   String
+  user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([answerId, userId])
+}
+
+model ResourceLocation {
+  id      String @id @default(cuid())
+  type    String @db.VarChar(100) // shelter, legal_aid, fertility_clinic, food_bank, support_group
+  name    String @db.VarChar(255)
+  address String @db.Text
+  city    String @db.VarChar(255)
+  country String @db.VarChar(5)
+  latitude  Float
+  longitude Float
+  phone   String? @db.VarChar(20)
+  url     String? @db.Text
+  isActive Boolean @default(true)
+  createdAt DateTime @default(now())
+
+  @@index([country])
+  @@index([type])
+  @@index([latitude, longitude])
+}

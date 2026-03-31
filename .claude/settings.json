@@ -1,0 +1,30 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(chmod +x C:/github/womens-safty/lambda/build.sh)",
+      "Bash(terraform --version)",
+      "Bash(aws sts:*)",
+      "Bash(bash build.sh)",
+      "Bash(mkdir -p .build)",
+      "Bash(terraform init:*)",
+      "Bash(terraform output:*)",
+      "Bash(node -e \"const m = require\\(''@aws-sdk/client-comprehendmedical''\\); console.log\\(Object.keys\\(m\\).filter\\(k => k.includes\\(''Entity''\\)\\).join\\(''\\\\n''\\)\\)\")",
+      "Bash(npm test:*)",
+      "Bash(node -e \":*)",
+      "Bash(find src:*)",
+      "Bash(do sed:*)",
+      "Bash(taskkill //PID 51768 //F)",
+      "Bash(npx ts-node:*)",
+      "Read(//c/github/womens-safty/**)",
+      "Bash(taskkill //PID 54040 //F)",
+      "Bash(taskkill //F //FI 'WINDOWTITLE eq *ts-node*')",
+      "Bash(do taskkill:*)",
+      "Bash(TOKEN=\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJjbW5kZ3htODgwMDAwYmNkZ2twdGVtYjZpIiwiZW1haWwiOiJmaW5hbDJAdGVzdC5jb20iLCJpYXQiOjE3NzQ4OTIxMDYsImV4cCI6MTc3NTQ5NjkwNn0.F3JRXqw5C02WIajGQ4q4raNL1T3uLqvXI6RRc_iOOYY\")",
+      "Bash(AUTH=\"Authorization: Bearer $TOKEN\")",
+      "Bash(SYMPTOM_ID=\"cmndgyt070002bcdg8h9zzbsu\")",
+      "Bash(MOOD_ID=\"cmndgyt7f0003bcdg5hi4gpsl\")",
+      "Bash(__NEW_LINE_c9030eab8e105bab__ echo:*)",
+      "Read(//c/github/womens-safty/frontend/src/screens/**)"
+    ]
+  }
+}

@@ -1,0 +1,7 @@
+# Copy this file to terraform.tfvars and fill in your values
+
+aws_region       = "us-east-1"
+project_name     = "womens-safety"
+environment      = "dev"
+database_url     = "postgresql://user:password@your-db-host:5432/health_tracking_db"
+sns_phone_number = "+1234567890"

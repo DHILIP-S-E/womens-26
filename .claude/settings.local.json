@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install:*)",
+      "Bash(npx vitest:*)",
+      "Bash(find /c/github/womens-safty -not -path */node_modules* -not -path */.git* -not -path */dist* -type f)",
+      "Bash(grep -E '\\\\.\\(ts|tsx|js|json|prisma|md|env\\)$')",
+      "Bash(npx prisma:*)",
+      "Bash(npm create:*)",
+      "Bash(npx vite:*)",
+      "Bash(wc -l /c/github/womens-safty/src/controllers/*.ts /c/github/womens-safty/frontend/src/screens/*.tsx)",
+      "Bash(npm uninstall:*)"
+    ]
+  }
+}
