@@ -7,7 +7,7 @@
     "dev": "concurrently -n backend,frontend -c blue,magenta \"nodemon --exec ts-node src/index.ts\" \"npm run dev --prefix frontend\"",
     "dev:backend": "nodemon --exec ts-node src/index.ts",
     "dev:frontend": "npm run dev --prefix frontend",
-    "build": "npm install --prefix frontend && npm run build --prefix frontend && npx prisma generate && tsc",
+    "build": "npm install --legacy-peer-deps --prefix frontend && npm run build --prefix frontend && npx prisma generate && tsc",
     "start": "NODE_ENV=production node dist/index.js",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
